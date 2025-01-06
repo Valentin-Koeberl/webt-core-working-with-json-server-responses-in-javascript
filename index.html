@@ -21,28 +21,31 @@
         .location-description {
             margin-top: 1rem;
         }
+        #map {
+            height: 400px;
+            margin-top: 1rem;
+            border-radius: 10px;
+        }
     </style>
 </head>
 <body>
 <div class="container">
     <h1 class="text-center my-4">Wedding Location Picker</h1>
-
-    <!-- Random Location Button -->
+    
     <div class="text-center mb-4">
         <button id="getRandomLocation" class="btn btn-primary">Get Random Wedding Location</button>
     </div>
 
-    <!-- Display Area for Wedding Location -->
     <div id="locationDisplay" class="location-display d-none">
         <p id="locationTitle" class="location-title"></p>
         <p id="locationPlace" class="location-place"></p>
         <p id="locationDescription" class="location-description"></p>
+        <div id="map"></div>
     </div>
-
-    <!-- Debug Output (Optional) -->
-    <div id="debugOutput" class="mt-4"></div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         const randomButton = document.getElementById('getRandomLocation');
@@ -50,7 +53,30 @@
         const locationTitle = document.getElementById('locationTitle');
         const locationPlace = document.getElementById('locationPlace');
         const locationDescription = document.getElementById('locationDescription');
-        const debugOutput = document.getElementById('debugOutput');
+        let map;
+        let marker;
+
+        const descriptions = [
+            "Sehr beliebt in diesem Bezirk",
+            "Hat eine gute Bewertung",
+            "Wird oft empfohlen",
+            "Eine einzigartige Location",
+            "Perfekt für besondere Anlässe"
+        ];
+
+        const initializeMap = (lat, lon) => {
+            if (!map) {
+                map = L.map('map').setView([lat, lon], 14);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '© OpenStreetMap contributors'
+                }).addTo(map);
+                marker = L.marker([lat, lon]).addTo(map);
+            } else {
+                map.setView([lat, lon], 14);
+                marker.setLatLng([lat, lon]);
+            }
+        };
 
         const fetchData = async (url) => {
             try {
@@ -61,18 +87,30 @@
                 return await response.json();
             } catch (error) {
                 console.error('Error fetching data:', error);
-                debugOutput.textContent = `Error: ${error.message}`;
             }
+        };
+
+        const getStreetName = (address) => {
+            const parts = address.split(',');
+            return parts.length > 1 ? parts[1].trim() : parts[0].trim();
         };
 
         const displayRandomLocation = (locations) => {
             if (locations && locations.length > 0) {
                 const randomIndex = Math.floor(Math.random() * locations.length);
+                const descriptionIndex = Math.floor(Math.random() * descriptions.length);
                 const selected = locations[randomIndex];
-                locationTitle.textContent = selected.name || 'Unknown Location';
+                const streetName = getStreetName(selected.address);
+
+                locationTitle.textContent = `Wedding Location: ${streetName}`;
                 locationPlace.textContent = selected.address || 'Unknown Address';
-                locationDescription.textContent = selected.description || 'No Description Available';
+                locationDescription.textContent = descriptions[descriptionIndex];
                 locationDisplay.classList.remove('d-none');
+                if (selected.lat && selected.lon) {
+                    initializeMap(selected.lat, selected.lon);
+                } else {
+                    console.warn('Selected location does not have latitude or longitude.');
+                }
             } else {
                 console.error('No locations available to display.');
             }
@@ -85,9 +123,11 @@
                 const locations = data.features.map(feature => ({
                     name: feature.properties.NAME,
                     address: feature.properties.ADRESSE,
-                    description: feature.properties.BESCHREIBUNG
+                    description: feature.properties.BESCHREIBUNG,
+                    lat: feature.geometry.coordinates[1],
+                    lon: feature.geometry.coordinates[0]
                 }));
-                debugOutput.textContent = JSON.stringify(locations, null, 2); // Optional Debug Output
+                console.log(locations);
                 displayRandomLocation(locations);
             }
         });
