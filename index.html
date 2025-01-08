@@ -78,16 +78,17 @@
             }
         };
 
-        const fetchData = async (url) => {
-            try {
-                const response = await fetch(url);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return await response.json();
-            } catch (error) {
-                console.error('Error fetching data:', error);
-            }
+        const fetchData = (url) => {
+            return fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .catch(error => {
+                    console.error('Error fetching data:', error);
+                });
         };
 
         const getStreetName = (address) => {
@@ -116,20 +117,21 @@
             }
         };
 
-        randomButton.addEventListener('click', async () => {
+        randomButton.addEventListener('click', () => {
             const url = 'https://data.wien.gv.at/daten/geo?service=WFS&request=GetFeature&version=1.1.0&typeName=ogdwien:TRAUMHOCHZEITOGD&srsName=EPSG:4326&outputFormat=json';
-            const data = await fetchData(url);
-            if (data && data.features) {
-                const locations = data.features.map(feature => ({
-                    name: feature.properties.NAME,
-                    address: feature.properties.ADRESSE,
-                    description: feature.properties.BESCHREIBUNG,
-                    lat: feature.geometry.coordinates[1],
-                    lon: feature.geometry.coordinates[0]
-                }));
-                console.log(locations);
-                displayRandomLocation(locations);
-            }
+            fetchData(url).then(data => {
+                if (data && data.features) {
+                    const locations = data.features.map(feature => ({
+                        name: feature.properties.NAME,
+                        address: feature.properties.ADRESSE,
+                        description: feature.properties.BESCHREIBUNG,
+                        lat: feature.geometry.coordinates[1],
+                        lon: feature.geometry.coordinates[0]
+                    }));
+                    console.log(locations);
+                    displayRandomLocation(locations);
+                }
+            });
         });
     });
 </script>
