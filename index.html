@@ -64,6 +64,7 @@
             "Perfekt für besondere Anlässe"
         ];
 
+        //code für map
         const initializeMap = (lat, lon) => {
             if (!map) {
                 map = L.map('map').setView([lat, lon], 14);
@@ -96,11 +97,13 @@
             return parts.length > 1 ? parts[1].trim() : parts[0].trim();
         };
 
+        //zufällige location erhalten
         const displayRandomLocation = (locations) => {
             if (locations && locations.length > 0) {
                 const randomIndex = Math.floor(Math.random() * locations.length);
                 const descriptionIndex = Math.floor(Math.random() * descriptions.length);
                 const selected = locations[randomIndex];
+                //straßennamen von der location ermitteln
                 const streetName = getStreetName(selected.address);
 
                 locationTitle.textContent = `Wedding Location: ${streetName}`;
@@ -108,6 +111,7 @@
                 locationDescription.textContent = descriptions[descriptionIndex];
                 locationDisplay.classList.remove('d-none');
                 if (selected.lat && selected.lon) {
+                    //auf andere function verweisen
                     initializeMap(selected.lat, selected.lon);
                 } else {
                     console.warn('Selected location does not have latitude or longitude.');
@@ -119,6 +123,7 @@
 
         randomButton.addEventListener('click', () => {
             const url = 'https://data.wien.gv.at/daten/geo?service=WFS&request=GetFeature&version=1.1.0&typeName=ogdwien:TRAUMHOCHZEITOGD&srsName=EPSG:4326&outputFormat=json';
+            //Sprung zu einer anderen function
             fetchData(url).then(data => {
                 if (data && data.features) {
                     const locations = data.features.map(feature => ({
